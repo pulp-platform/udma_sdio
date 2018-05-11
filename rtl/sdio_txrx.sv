@@ -97,6 +97,8 @@ module sdio_txrx
 
     logic       s_clk_en;
 
+    logic       s_busy;
+
     enum logic [1:0] {ST_CMD_ONLY,
                       ST_WAIT_LAST,
                       ST_WAIT_EOT
@@ -156,7 +158,7 @@ module sdio_txrx
         if((r_single_block || r_cmd_eot) && r_data_eot)
         begin
           s_clear_eot = 1'b1;
-          s_state <= ST_CMD_ONLY;
+          s_state = ST_CMD_ONLY;
         end
       end
     endcase // r_state
