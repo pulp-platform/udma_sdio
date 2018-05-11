@@ -115,6 +115,8 @@ module udma_sdio_top #(
     logic         s_clkdiv_ack;
     logic         s_clk_sdio;
 
+    logic         s_eot;
+
     assign data_tx_datasize_o = 2'b10;
     assign data_rx_datasize_o = 2'b10;
 
