@@ -123,6 +123,7 @@ module sdio_txrx
     s_cmd_mux      = 1'b0;
     s_stopcmd_start = 1'b0;
     s_clear_eot     = 1'b0;
+    s_sample_eot    = 1'b0;
     s_state         = r_state;
     s_sample_sb     = 1'b0;
     s_single_block  = 1'b0;
