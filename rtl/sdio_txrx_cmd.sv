@@ -107,8 +107,8 @@ module sdio_txrx_cmd
     logic [7:0] s_cnt_target;
     logic [7:0] r_cnt;
     logic       r_cnt_running;
-    logic [6:0] s_status;
-    logic [6:0] r_status;
+    logic [5:0] s_status;
+    logic [5:0] r_status;
     logic       s_status_sample;
 
     assign s_crc_in    = s_crc_intx ? sdcmd_i : s_sdcmd;
@@ -120,6 +120,8 @@ module sdio_txrx_cmd
 
     assign start_write_o = s_start_write;
     assign start_read_o  = s_start_read;
+
+    assign status_o = r_status;
 
   sdio_crc7 i_cmd_crc (
     .clk_i        ( clk_i  ),
@@ -396,6 +398,8 @@ module sdio_txrx_cmd
         else
         begin 
           r_state <= s_state;
+          if(s_status_sample)
+            r_status <= s_status;
           if(cmd_start_i)
             r_cmd <= {cmd_op_i,cmd_arg_i};
           else if(s_shift_cmd)

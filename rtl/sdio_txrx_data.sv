@@ -100,8 +100,8 @@ module sdio_txrx_data
     logic   [8:0] s_cnt_target;
     logic   [8:0] r_cnt;
     logic         r_cnt_running;
-    logic   [6:0] s_status;
-    logic   [6:0] r_status;
+    logic   [5:0] s_status;
+    logic   [5:0] r_status;
     logic         s_status_sample;
 
     logic   [2:0] r_bit_cnt;
@@ -675,8 +675,9 @@ module sdio_txrx_data
         end
         else
         begin 
-          r_status <= s_status;
           r_state  <= s_state;
+          if(s_status_sample)
+            r_status <= s_status;
           if(s_in_data_ready)
             r_data <= in_data_if_data_i;
           else if(s_rx_en)
