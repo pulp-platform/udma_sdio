@@ -84,6 +84,7 @@ module sdio_txrx_cmd
     logic [37:0] r_cmd;
 
     logic [135:0] r_rsp;
+    logic [127:0] s_rsp;
     logic       s_rsp_en;
     logic [7:0] s_rsp_len;
     logic       s_rsp_crc;
@@ -116,7 +117,7 @@ module sdio_txrx_cmd
     assign sdcmd_oen_o = r_sdcmd_oen;
     assign eot_o       = s_eot;
     assign sdclk_en_o  = s_clk_en;
-    assign rsp_data_o  = r_rsp[128:1];
+    assign rsp_data_o  = s_rsp[127:0];
 
     assign start_write_o = s_start_write;
     assign start_read_o  = s_start_read;
@@ -386,6 +387,7 @@ module sdio_txrx_cmd
         r_status <=  'h0;
         r_rsp   <=  'h0;
         r_cmd    <=  'h0;
+        s_rsp <= 'h0;
       end else 
       begin
         if(clr_stat_i)
@@ -394,6 +396,7 @@ module sdio_txrx_cmd
           r_status <= 'h0;
           r_rsp   <=  'h0;
           r_cmd    <=  'h0;
+          s_rsp <= 'h0;
         end
         else
         begin 
@@ -401,11 +404,17 @@ module sdio_txrx_cmd
           if(s_status_sample)
             r_status <= s_status;
           if(cmd_start_i)
+          begin
             r_cmd <= {cmd_op_i,cmd_arg_i};
+            r_rsp <= 'h0;
+            s_rsp <= 'h0;
+          end
           else if(s_shift_cmd)
             r_cmd <= {r_cmd[36:0],1'b0};
           if(s_shift_resp)
             r_rsp <= {r_rsp[134:0],sdcmd_i};
+          else
+            s_rsp <= r_rsp[127:0];
         end
       end
     end

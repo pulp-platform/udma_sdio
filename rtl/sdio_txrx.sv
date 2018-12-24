@@ -145,7 +145,7 @@ module sdio_txrx
       end
       ST_WAIT_LAST:
       begin
-        s_cmd_mux = 1'b1;
+        //s_cmd_mux = 1'b1;
         if(s_data_last)
         begin
           s_stopcmd_start = 1'b1;
@@ -154,7 +154,7 @@ module sdio_txrx
       end
       ST_WAIT_EOT:
       begin
-        s_cmd_mux = 1'b1;
+        //s_cmd_mux = 1'b1;
         s_sample_eot = 1'b1;
         if((r_single_block || r_cmd_eot) && r_data_eot)
         begin
@@ -194,7 +194,7 @@ module sdio_txrx
     end
   end
 
-  assign s_clk_en = s_cmd_clk_en | s_data_clk_en;
+  assign s_clk_en = 1'b1;//s_cmd_clk_en | s_data_clk_en; 
 
   pulp_clock_gating i_clk_gate_sdio
   (
