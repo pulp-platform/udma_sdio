@@ -88,7 +88,6 @@ module sdio_txrx_cmd
     logic [7:0] s_rsp_len;
     logic       s_rsp_crc;
     logic       s_rsp_bsy;
-    logic [2:0] s_rsp_type;
 
     logic       s_eot;
 
@@ -116,7 +115,7 @@ module sdio_txrx_cmd
     assign sdcmd_oen_o = r_sdcmd_oen;
     assign eot_o       = s_eot;
     assign sdclk_en_o  = s_clk_en;
-    assign rsp_data_o  = r_rsp[128:1];
+    assign rsp_data_o  = r_rsp[127:0];
 
     assign start_write_o = s_start_write;
     assign start_read_o  = s_start_read;
@@ -166,7 +165,7 @@ module sdio_txrx_cmd
           s_rsp_crc = 1'b0;
           s_rsp_len = 8'd133;
         end
-      endcase // s_rsp_type
+      endcase
     end
 
     always_comb

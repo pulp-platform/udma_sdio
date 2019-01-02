@@ -184,9 +184,9 @@ module udma_sdio_reg_if #(
             r_data_quad       <= 'h0;
             r_data_block_size <= 'h0;
             r_data_block_num  <= 'h0;
-            r_sdio_start     = 1'b0;
-            r_clk_div_valid  = 1'b0;
-            r_clk_div        = 7'h0;
+            r_sdio_start     <= 1'b0;
+            r_clk_div_valid  <= 1'b0;
+            r_clk_div        <= 7'h0;
 
         end
         else
@@ -222,8 +222,8 @@ module udma_sdio_reg_if #(
                 end
                 `REG_CMD_OP:
                 begin
-                    r_cmd_op         <= cfg_data_i[5:0];
-                    r_cmd_rsp_type   <= cfg_data_i[10:8];
+                    r_cmd_op         <= cfg_data_i[13:8];
+                    r_cmd_rsp_type   <= cfg_data_i[2:0];
                 end
                 `REG_CMD_ARG:
                 begin
@@ -239,12 +239,12 @@ module udma_sdio_reg_if #(
                 end
                 `REG_START:
                 begin
-                    r_sdio_start       = cfg_data_i[0];
+                    r_sdio_start      <= cfg_data_i[0];
                 end
                 `REG_CLK_DIV:
                 begin
-                    r_clk_div_valid    = cfg_data_i[8];
-                    r_clk_div          = cfg_data_i[7:0];
+                    r_clk_div_valid   <= cfg_data_i[8];
+                    r_clk_div         <= cfg_data_i[7:0];
                 end
                 endcase
             end
