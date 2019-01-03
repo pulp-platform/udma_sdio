@@ -459,7 +459,7 @@ module sdio_txrx_data
         ST_TX_START:
         begin
           s_sddata     = 4'b0;      //start bit
-          s_sddata_oen = 1'b0; // outup enabled
+          s_sddata_oen = 1'b1; // outup enabled
           s_state = ST_TX_SHIFT;
           s_cnt_start = 1'b1;  // starts counting
           s_cnt_byte  = 1'b1;  // counting bytes not cycles
