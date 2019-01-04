@@ -83,7 +83,7 @@ module udma_sdio_reg_if #(
     output logic                      cfg_clk_div_valid_o,
     input logic                       cfg_clk_div_ack_i,
 
-    input logic [5:0]                 txrx_status_i,
+    input logic [15:0]                txrx_status_i,
     input logic                       txrx_eot_i,
 
     output logic [5:0]                cfg_cmd_op_o,
