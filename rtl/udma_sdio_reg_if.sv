@@ -85,6 +85,7 @@ module udma_sdio_reg_if #(
 
     input logic [15:0]                txrx_status_i,
     input logic                       txrx_eot_i,
+    input logic                       txrx_err_i,
 
     output logic [5:0]                cfg_cmd_op_o,
     output logic [31:0]               cfg_cmd_arg_o,
@@ -126,6 +127,10 @@ module udma_sdio_reg_if #(
 
     logic         r_clk_div_valid;
     logic   [7:0] r_clk_div;
+
+    logic  [15:0] r_status;
+    logic         r_eot;
+    logic         r_err;
 
     assign s_wr_addr = (cfg_valid_i & ~cfg_rwn_i) ? cfg_addr_i : 5'h0;
     assign s_rd_addr = (cfg_valid_i &  cfg_rwn_i) ? cfg_addr_i : 5'h0;
@@ -190,8 +195,11 @@ module udma_sdio_reg_if #(
             r_data_block_num  <= 'h0;
             r_sdio_start     <= 1'b0;
             r_clk_div_valid  <= 1'b0;
-            r_clk_div        <= 7'h0;
+            r_clk_div        <= 'h0;
 
+            r_status         <= 'h0;
+            r_eot            <= 1'b0;
+            r_err            <= 1'b0;
         end
         else
         begin
@@ -200,6 +208,23 @@ module udma_sdio_reg_if #(
             r_tx_en         =  'h0;
             r_tx_clr        =  'h0;
             r_sdio_start    = 1'b0;
+
+           if(cfg_clk_div_ack_i)
+             r_clk_div_valid <= 1'b0;
+
+           /* Eend of Transfer INT */
+           if (txrx_eot_i)
+             begin
+                r_eot    <= 1'b1;
+                r_status <= txrx_status_i;
+             end
+
+           /* ERROR INT */
+           if (txrx_err_i)
+             begin
+                r_err    <= 1'b1;
+                r_status <= txrx_status_i;
+             end
 
             if (cfg_valid_i & ~cfg_rwn_i)
             begin
@@ -250,6 +275,13 @@ module udma_sdio_reg_if #(
                     r_clk_div_valid   <= cfg_data_i[8];
                     r_clk_div         <= cfg_data_i[7:0];
                 end
+                `REG_STATUS:
+                begin
+                   if (cfg_data_i[0])
+                     r_eot <= 1'b0;
+                   if (cfg_data_i[1])
+                     r_err <= 1'b0;
+                end
                 endcase
             end
         end
@@ -280,7 +312,7 @@ module udma_sdio_reg_if #(
         `REG_RSP3:
             cfg_data_o = cfg_rsp_data_i[127:96];
         `REG_STATUS:
-            cfg_data_o = { txrx_eot_i, txrx_status_i };
+            cfg_data_o = { r_status, 14'h0, r_err, r_eot };
         default:
             cfg_data_o = 'h0;
         endcase

@@ -180,7 +180,7 @@ module sdio_txrx_cmd
       s_crc_intx   = 1'b0; //default CRC takes input from sddata out
       s_cnt_start  = 1'b0;
       s_cnt_target = 8'h0;
-      s_status     = r_status;
+      s_status     = 'h0;
       s_status_sample = 1'b0;
       s_eot        = 1'b0;
       s_crc_clr    = 1'b0;
@@ -193,6 +193,7 @@ module sdio_txrx_cmd
           s_clk_en = 1'b0;
           if(cmd_start_i)
           begin
+            s_status_sample = 1'b1; // Clear previous status
             s_state = ST_TX_START;
             s_clk_en = 1'b1;
           end

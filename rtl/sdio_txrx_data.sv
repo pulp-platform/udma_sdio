@@ -53,7 +53,6 @@ module sdio_txrx_data
   );
 
   localparam STATUS_RSP_TIMEOUT   = 6'h1;
-  localparam STATUS_RSP_WRONG_DIR = 6'h2;
 
   localparam RSP_TYPE_NULL        = 3'b000;
   localparam RSP_TYPE_48_CRC      = 3'b001;
@@ -429,7 +428,7 @@ module sdio_txrx_data
       s_cnt_start     = 1'b0;
       s_cnt_target    = 9'h0;
       s_cnt_byte      = 1'b0;
-      s_status        = r_status;
+      s_status        = 'h0;
       s_status_sample = 1'b0;
       s_busy          = 1'b1;
       s_clk_en        = 1'b1;
@@ -447,6 +446,7 @@ module sdio_txrx_data
           s_clk_en = 1'b0;
           if(data_start_i)
           begin
+            s_status_sample = 1'b1; // Clear previous status
             s_clk_en = 1'b1;
             s_cnt_block_upd = 1'b1;
             s_cnt_block = data_block_num_i;

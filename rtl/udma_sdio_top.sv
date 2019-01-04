@@ -63,7 +63,7 @@ module udma_sdio_top #(
 	input  logic               [31:0] data_tx_i,
 	input  logic                      data_tx_valid_i,
 	output logic                      data_tx_ready_o,
-              
+
 	output logic                [1:0] data_rx_datasize_o,
 	output logic               [31:0] data_rx_o,
 	output logic                      data_rx_valid_o,
@@ -71,9 +71,9 @@ module udma_sdio_top #(
 
     output logic                      eot_o,
 	output logic                      err_o,
-              
-	// SDIO signals   
-    output logic                      sdclk_o,           
+
+	// SDIO signals
+    output logic                      sdclk_o,
     output logic                      sdcmd_o,
     input  logic                      sdcmd_i,
     output logic                      sdcmd_oen_o,
@@ -116,11 +116,25 @@ module udma_sdio_top #(
     logic         s_clk_sdio;
 
     logic         s_eot;
+    logic         s_err;
 
     assign data_tx_datasize_o = 2'b10;
     assign data_rx_datasize_o = 2'b10;
 
     assign s_clkdiv_en = 1'b1;
+
+   assign s_err = s_status ? 1'b1 : 1'b0;
+
+    pulp_sync_wedge error_int_sync
+     (
+      .clk_i(sys_clk_i),
+      .rstn_i(rstn_i),
+      .en_i(1'b1),
+      .serial_i(s_err),
+      .r_edge_o(err_o),
+      .f_edge_o(),
+      .serial_o()
+      );
 
     udma_sdio_reg_if #(
         .L2_AWIDTH_NOAL(L2_AWIDTH_NOAL),
@@ -163,7 +177,8 @@ module udma_sdio_top #(
         .cfg_clk_div_ack_i    ( s_clkdiv_ack        ),
 
         .txrx_status_i        ( s_status            ),
-        .txrx_eot_i           ( s_eot               ),
+        .txrx_eot_i           ( eot_o               ),
+        .txrx_err_i           ( err_o               ),
 
         .cfg_cmd_op_o         ( s_cmd_op            ),
         .cfg_cmd_arg_o        ( s_cmd_arg           ),
@@ -227,13 +242,13 @@ module udma_sdio_top #(
         .eot_o              ( s_eot               ),
         .status_o           ( s_status            ),
 
-        .in_data_if_data_i  ( s_data_tx_dc        ), 
+        .in_data_if_data_i  ( s_data_tx_dc        ),
         .in_data_if_valid_i ( s_data_tx_dc_valid  ),
-        .in_data_if_ready_o ( s_data_tx_dc_ready  ), 
+        .in_data_if_ready_o ( s_data_tx_dc_ready  ),
 
-        .out_data_if_data_o ( s_data_rx_dc        ), 
+        .out_data_if_data_o ( s_data_rx_dc        ),
         .out_data_if_valid_o( s_data_rx_dc_valid  ),
-        .out_data_if_ready_i( s_data_rx_dc_ready  ), 
+        .out_data_if_ready_i( s_data_rx_dc_ready  ),
 
         .sdclk_o            ( sdclk_o             ),
         .sdcmd_o            ( sdcmd_o             ),
@@ -248,7 +263,7 @@ module udma_sdio_top #(
     io_tx_fifo #(
       .DATA_WIDTH(32),
       .BUFFER_DEPTH(2)
-      ) i_i2c_tx_fifo (
+      ) i_sdio_tx_fifo (
         .clk_i        ( sys_clk_i          ),
         .rstn_i       ( rstn_i             ),
         .clr_i        ( 1'b0               ),
@@ -264,8 +279,8 @@ module udma_sdio_top #(
 
     udma_dc_fifo #(32,4) i_dc_fifo_tx
     (
-        .src_clk_i    ( sys_clk_i          ),  
-        .src_rstn_i   ( rstn_i             ),  
+        .src_clk_i    ( sys_clk_i          ),
+        .src_rstn_i   ( rstn_i             ),
         .src_data_i   ( s_data_tx          ),
         .src_valid_i  ( s_data_tx_valid    ),
         .src_ready_o  ( s_data_tx_ready    ),
@@ -278,8 +293,8 @@ module udma_sdio_top #(
 
     udma_dc_fifo #(32,4) u_dc_fifo_rx
     (
-        .src_clk_i    ( s_clk_sdio         ),  
-        .src_rstn_i   ( rstn_i             ),  
+        .src_clk_i    ( s_clk_sdio         ),
+        .src_rstn_i   ( rstn_i             ),
         .src_data_i   ( s_data_rx_dc       ),
         .src_valid_i  ( s_data_rx_dc_valid ),
         .src_ready_o  ( s_data_rx_dc_ready ),
