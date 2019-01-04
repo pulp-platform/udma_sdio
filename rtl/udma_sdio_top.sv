@@ -162,6 +162,9 @@ module udma_sdio_top #(
         .cfg_clk_div_valid_o  ( s_clkdiv_valid      ),
         .cfg_clk_div_ack_i    ( s_clkdiv_ack        ),
 
+        .txrx_status_i        ( s_status            ),
+        .txrx_eot_i           ( s_eot               ),
+
         .cfg_cmd_op_o         ( s_cmd_op            ),
         .cfg_cmd_arg_o        ( s_cmd_arg           ),
         .cfg_cmd_rsp_type_o   ( s_cmd_rsp_type      ),

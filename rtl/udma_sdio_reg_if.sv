@@ -19,10 +19,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // SPI Master Registers
-`define REG_RX_SADDR     5'b00000 //BASEADDR+0x00 
+`define REG_RX_SADDR     5'b00000 //BASEADDR+0x00
 `define REG_RX_SIZE      5'b00001 //BASEADDR+0x04
-`define REG_RX_CFG       5'b00010 //BASEADDR+0x08  
-`define REG_RX_INTCFG    5'b00011 //BASEADDR+0x0C  
+`define REG_RX_CFG       5'b00010 //BASEADDR+0x08
+`define REG_RX_INTCFG    5'b00011 //BASEADDR+0x0C
 
 `define REG_TX_SADDR     5'b00100 //BASEADDR+0x10
 `define REG_TX_SIZE      5'b00101 //BASEADDR+0x14
@@ -40,57 +40,61 @@
 `define REG_RSP3         5'b01111 //BASEADDR+0x3C
 
 `define REG_CLK_DIV      5'b10000 //BASEADDR+0x40
+`define REG_STATUS       5'b10001 //BASEADDR+0x44
 
 module udma_sdio_reg_if #(
-    parameter L2_AWIDTH_NOAL = 12,
-    parameter TRANS_SIZE     = 16
-)
-(
-	input  logic 	                  clk_i,
-	input  logic   	                  rstn_i,
+                          parameter L2_AWIDTH_NOAL = 12,
+                          parameter TRANS_SIZE     = 16
+                          )
+   (
+    input logic                       clk_i,
+    input logic                       rstn_i,
 
-	input  logic               [31:0] cfg_data_i,
-	input  logic                [4:0] cfg_addr_i,
-	input  logic                      cfg_valid_i,
-	input  logic                      cfg_rwn_i,
-	output logic               [31:0] cfg_data_o,
-	output logic                      cfg_ready_o,
+    input logic [31:0]                cfg_data_i,
+    input logic [4:0]                 cfg_addr_i,
+    input logic                       cfg_valid_i,
+    input logic                       cfg_rwn_i,
+    output logic [31:0]               cfg_data_o,
+    output logic                      cfg_ready_o,
 
     output logic [L2_AWIDTH_NOAL-1:0] cfg_rx_startaddr_o,
-    output logic     [TRANS_SIZE-1:0] cfg_rx_size_o,
+    output logic [TRANS_SIZE-1:0]     cfg_rx_size_o,
     output logic                      cfg_rx_continuous_o,
     output logic                      cfg_rx_en_o,
     output logic                      cfg_rx_clr_o,
-    input  logic                      cfg_rx_en_i,
-    input  logic                      cfg_rx_pending_i,
-    input  logic [L2_AWIDTH_NOAL-1:0] cfg_rx_curr_addr_i,
-    input  logic     [TRANS_SIZE-1:0] cfg_rx_bytes_left_i,
+    input logic                       cfg_rx_en_i,
+    input logic                       cfg_rx_pending_i,
+    input logic [L2_AWIDTH_NOAL-1:0]  cfg_rx_curr_addr_i,
+    input logic [TRANS_SIZE-1:0]      cfg_rx_bytes_left_i,
 
     output logic [L2_AWIDTH_NOAL-1:0] cfg_tx_startaddr_o,
-    output logic     [TRANS_SIZE-1:0] cfg_tx_size_o,
+    output logic [TRANS_SIZE-1:0]     cfg_tx_size_o,
     output logic                      cfg_tx_continuous_o,
     output logic                      cfg_tx_en_o,
     output logic                      cfg_tx_clr_o,
-    input  logic                      cfg_tx_en_i,
-    input  logic                      cfg_tx_pending_i,
-    input  logic [L2_AWIDTH_NOAL-1:0] cfg_tx_curr_addr_i,
-    input  logic     [TRANS_SIZE-1:0] cfg_tx_bytes_left_i,
+    input logic                       cfg_tx_en_i,
+    input logic                       cfg_tx_pending_i,
+    input logic [L2_AWIDTH_NOAL-1:0]  cfg_tx_curr_addr_i,
+    input logic [TRANS_SIZE-1:0]      cfg_tx_bytes_left_i,
 
     output logic                      cfg_sdio_start_o,
 
-    output logic                [7:0] cfg_clk_div_data_o,
+    output logic [7:0]                cfg_clk_div_data_o,
     output logic                      cfg_clk_div_valid_o,
-    input  logic                      cfg_clk_div_ack_i,
+    input logic                       cfg_clk_div_ack_i,
 
-    output logic                [5:0] cfg_cmd_op_o,
-    output logic               [31:0] cfg_cmd_arg_o,
-    output logic                [2:0] cfg_cmd_rsp_type_o,
-    input  logic              [127:0] cfg_rsp_data_i,
+    input logic [5:0]                 txrx_status_i,
+    input logic                       txrx_eot_i,
+
+    output logic [5:0]                cfg_cmd_op_o,
+    output logic [31:0]               cfg_cmd_arg_o,
+    output logic [2:0]                cfg_cmd_rsp_type_o,
+    input logic [127:0]               cfg_rsp_data_i,
     output logic                      cfg_data_en_o,
     output logic                      cfg_data_rwn_o,
     output logic                      cfg_data_quad_o,
-    output logic                [9:0] cfg_data_block_size_o,
-    output logic                [7:0] cfg_data_block_num_o
+    output logic [9:0]                cfg_data_block_size_o,
+    output logic [7:0]                cfg_data_block_num_o
 );
 
     logic [L2_AWIDTH_NOAL-1:0] r_rx_startaddr;
@@ -151,7 +155,7 @@ module udma_sdio_reg_if #(
 
     assign cfg_clk_div_data_o    = r_clk_div;
 
-    edge_propagator_tx i_edgeprop_soc 
+    edge_propagator_tx i_edgeprop_soc
     (
       .clk_i(clk_i),
       .rstn_i(rstn_i),
@@ -160,9 +164,9 @@ module udma_sdio_reg_if #(
       .valid_o(cfg_clk_div_valid_o)
     );
 
-    always_ff @(posedge clk_i, negedge rstn_i) 
+    always_ff @(posedge clk_i, negedge rstn_i)
     begin
-        if(~rstn_i) 
+        if(~rstn_i)
         begin
             // SPI REGS
             r_rx_startaddr  <=  'h0;
@@ -275,6 +279,8 @@ module udma_sdio_reg_if #(
             cfg_data_o = cfg_rsp_data_i[95:64];
         `REG_RSP3:
             cfg_data_o = cfg_rsp_data_i[127:96];
+        `REG_STATUS:
+            cfg_data_o = { txrx_eot_i, txrx_status_i };
         default:
             cfg_data_o = 'h0;
         endcase
@@ -282,4 +288,4 @@ module udma_sdio_reg_if #(
 
     assign cfg_ready_o  = 1'b1;
 
-endmodule 
+endmodule
