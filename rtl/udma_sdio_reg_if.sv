@@ -193,9 +193,10 @@ module udma_sdio_reg_if #(
             r_data_quad       <= 'h0;
             r_data_block_size <= 'h0;
             r_data_block_num  <= 'h0;
-            r_sdio_start     <= 1'b0;
-            r_clk_div_valid  <= 1'b0;
-            r_clk_div        <= 'h0;
+            r_sdio_start       = 1'b0;
+
+            r_clk_div_valid   <= 1'b0;
+            r_clk_div         <= 'h0;
 
             r_status         <= 'h0;
             r_eot            <= 1'b0;
@@ -268,7 +269,7 @@ module udma_sdio_reg_if #(
                 end
                 `REG_START:
                 begin
-                    r_sdio_start      <= cfg_data_i[0];
+                    r_sdio_start      = cfg_data_i[0];
                 end
                 `REG_CLK_DIV:
                 begin
