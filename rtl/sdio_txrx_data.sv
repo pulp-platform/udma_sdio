@@ -69,6 +69,7 @@ module sdio_txrx_data
                       ST_TX_END,
                       ST_TX_CRCSTAT,
                       ST_TX_BUSY,
+                      ST_TX_DELAY_START,
                       ST_RX_START,
                       ST_RX_STOP,
                       ST_RX_SHIFT,
@@ -151,7 +152,7 @@ module sdio_txrx_data
     assign sddata_oen_o[2] = data_quad_i ? s_sddata_oen : 1'b1;
     assign sddata_oen_o[3] = data_quad_i ? s_sddata_oen : 1'b1;
 
-    assign data_last_o = s_busy & s_cnt_block_done;
+    assign data_last_o = s_busy & s_cnt_block_done & s_cnt_done;
     assign busy_o = s_busy;
     assign sdclk_en_o = s_clk_en;
 
@@ -515,13 +516,13 @@ module sdio_txrx_data
         ST_TX_BUSY:
         begin
           s_sddata_oen = 1'b1; // outup disabled
-          if(s_cnt_done) //means timeout
+          if(s_cnt_done && (data_rwn_i)) //means timeout
           begin
             s_state = ST_IDLE;
           end
           else
           begin
-            if(sddata_i[0])
+            if(sddata_i == 1)
             begin
               if(s_cnt_block_done)
               begin
@@ -530,12 +531,26 @@ module sdio_txrx_data
               end
               else
               begin
+                // FIXME: We add a small delay here to give the sdcard model
+                // time to make its transitions, need to test on real sdcard
+                s_cnt_start  = 1'b1; // starts counting
+                s_cnt_target = 8'd7; // waits 8 cycles
                 s_cnt_block_upd = 1'b1;
                 s_cnt_block = r_cnt_block - 1;
-                s_state = ST_TX_START;
+                s_state = ST_TX_DELAY_START; // delay next transfer slightly
               end
             end
           end
+        end
+        ST_TX_DELAY_START:
+        begin
+            // wait a few cycles before doing the next transfer
+            s_busy = 1'b0; // keep busy to zero to avoid a false "data_start"
+            s_sddata_oen = 1'b1; // outup disabled
+            if(s_cnt_done)
+            begin
+                s_state = ST_TX_START;
+            end
         end
         ST_RX_START:
         begin
