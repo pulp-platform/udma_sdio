@@ -126,7 +126,7 @@ module udma_sdio_reg_if #(
     logic         r_sdio_start;
 
     logic         r_clk_div_valid;
-    logic   [7:0] r_clk_div;
+    logic   [7:0] r_clk_div_data;
 
     logic  [15:0] r_status;
     logic         r_eot;
@@ -158,7 +158,7 @@ module udma_sdio_reg_if #(
 
     assign cfg_sdio_start_o      = r_sdio_start;
 
-    assign cfg_clk_div_data_o    = r_clk_div;
+    assign cfg_clk_div_data_o    = r_clk_div_data;
 
     edge_propagator_tx i_edgeprop_soc
     (
@@ -195,8 +195,8 @@ module udma_sdio_reg_if #(
             r_data_block_num  <= 'h0;
             r_sdio_start       = 1'b0;
 
-            r_clk_div_valid   <= 1'b0;
-            r_clk_div         <= 'h0;
+            r_clk_div_valid  <= 1'b0;
+            r_clk_div_data   <= 'h0;
 
             r_status         <= 'h0;
             r_eot            <= 1'b0;
@@ -274,7 +274,7 @@ module udma_sdio_reg_if #(
                 `REG_CLK_DIV:
                 begin
                     r_clk_div_valid   <= cfg_data_i[8];
-                    r_clk_div         <= cfg_data_i[7:0];
+                    r_clk_div_data    <= cfg_data_i[7:0];
                 end
                 `REG_STATUS:
                 begin
@@ -312,6 +312,8 @@ module udma_sdio_reg_if #(
             cfg_data_o = cfg_rsp_data_i[95:64];
         `REG_RSP3:
             cfg_data_o = cfg_rsp_data_i[127:96];
+        `REG_CLK_DIV:
+            cfg_data_o = {23'h0, r_clk_div_valid, r_clk_div_data};
         `REG_STATUS:
             cfg_data_o = { r_status, 14'h0, r_err, r_eot };
         default:
