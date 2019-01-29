@@ -62,6 +62,8 @@ module sdio_txrx
 
     logic s_start_write;
     logic s_start_read;
+    logic s_data_en;
+    logic r_data_en;
 
     logic        s_cmd_eot;
     logic        s_cmd_clk_en;
@@ -108,7 +110,8 @@ module sdio_txrx
   assign s_stopcmd_arg      = 32'h0;  //no argument
   assign s_stopcmd_rsp_type =  3'h1;  //resp is R1
 
-  assign s_data_start = data_en_i & ((data_rwn_i & s_start_read) | (~data_rwn_i & s_start_write));
+  assign s_data_en = r_data_en;
+  assign s_data_start = s_data_en & ((data_rwn_i & s_start_read) | (~data_rwn_i & s_start_write));
 
   assign s_cmd_start    = s_cmd_mux ? s_stopcmd_start    : cmd_start_i   ; 
   assign s_cmd_op       = s_cmd_mux ? s_stopcmd_op       : cmd_op_i      ; 
@@ -130,13 +133,13 @@ module sdio_txrx
     case(r_state)
       ST_CMD_ONLY:
       begin
-        if(cmd_start_i && data_en_i && (data_block_num_i == 0))
+        if(cmd_start_i && s_data_en && (data_block_num_i == 0))
         begin
           s_state = ST_WAIT_EOT;
           s_single_block = 1'b1;
           s_sample_sb = 1'b1;
         end
-        else if(cmd_start_i && data_en_i)
+        else if(cmd_start_i && s_data_en)
         begin
           s_state = ST_WAIT_LAST;
           s_single_block = 1'b0;
@@ -167,12 +170,20 @@ module sdio_txrx
 
   always_ff @(posedge clk_i or negedge rstn_i) begin : proc_r_eot
     if(~rstn_i) begin
+      r_data_en <= 0;
       r_cmd_eot  <= 0;
       r_data_eot <= 0;
       r_single_block <= 0;
       r_state <= ST_CMD_ONLY;
     end else begin
       r_state <= s_state;
+      if( ~s_cmd_mux )
+        r_data_en <= data_en_i;
+      else
+      begin
+           if(s_stopcmd_start)
+               r_data_en = 0;
+      end
       if(s_clear_eot)
       begin
         r_cmd_eot  <= 0;
