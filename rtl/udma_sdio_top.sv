@@ -97,6 +97,9 @@ module udma_sdio_top #(
     logic   [5:0] s_cmd_op;
     logic  [31:0] s_cmd_arg;
     logic   [2:0] s_cmd_rsp_type;
+    logic   [5:0] s_stopcmd_op;
+    logic  [31:0] s_stopcmd_arg;
+    logic   [2:0] s_stopcmd_rsp_type;
     logic [127:0] s_rsp_data;
     logic         s_data_en;
     logic         s_data_rwn;
@@ -183,6 +186,9 @@ module udma_sdio_top #(
         .cfg_cmd_op_o         ( s_cmd_op            ),
         .cfg_cmd_arg_o        ( s_cmd_arg           ),
         .cfg_cmd_rsp_type_o   ( s_cmd_rsp_type      ),
+        .cfg_stopcmd_op_o         ( s_stopcmd_op            ),
+        .cfg_stopcmd_arg_o        ( s_stopcmd_arg           ),
+        .cfg_stopcmd_rsp_type_o   ( s_stopcmd_rsp_type      ),
         .cfg_rsp_data_i       ( s_rsp_data          ),
         .cfg_data_en_o        ( s_data_en           ),
         .cfg_data_rwn_o       ( s_data_rwn          ),
@@ -233,6 +239,9 @@ module udma_sdio_top #(
         .cmd_op_i           ( s_cmd_op            ),
         .cmd_arg_i          ( s_cmd_arg           ),
         .cmd_rsp_type_i     ( s_cmd_rsp_type      ),
+        .stopcmd_op_i           ( s_stopcmd_op            ),
+        .stopcmd_arg_i          ( s_stopcmd_arg           ),
+        .stopcmd_rsp_type_i     ( s_stopcmd_rsp_type      ),
         .rsp_data_o         ( s_rsp_data          ),
         .data_en_i          ( s_data_en           ),
         .data_rwn_i         ( s_data_rwn          ),
