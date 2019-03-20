@@ -29,6 +29,10 @@ module sdio_txrx
     input  logic  [31:0] cmd_arg_i,
     input  logic   [2:0] cmd_rsp_type_i,
 
+    input logic    [5:0] stopcmd_op_i,
+    input logic   [31:0] stopcmd_arg_i,
+    input logic    [2:0] stopcmd_rsp_type_i,
+
     output logic [127:0] rsp_data_o,
 
     input  logic         data_en_i,
@@ -73,8 +77,8 @@ module sdio_txrx
     logic  [2:0] s_cmd_rsp_type;
     logic  [5:0] s_cmd_status;
 
-    logic        s_stopcmd_start;   
-    logic  [5:0] s_stopcmd_op;  
+    logic        s_stopcmd_start;
+    logic  [5:0] s_stopcmd_op;
     logic [31:0] s_stopcmd_arg;
     logic  [2:0] s_stopcmd_rsp_type;
 
@@ -106,9 +110,9 @@ module sdio_txrx
                       ST_WAIT_EOT
                       } s_state,r_state;
 
-  assign s_stopcmd_op       =  6'd12; //STOP_CMD is cmd 12
-  assign s_stopcmd_arg      = 32'h0;  //no argument
-  assign s_stopcmd_rsp_type =  3'h1;  //resp is R1
+  assign s_stopcmd_op       = stopcmd_op_i;
+  assign s_stopcmd_arg      = stopcmd_arg_i;
+  assign s_stopcmd_rsp_type = stopcmd_rsp_type_i;
 
   assign s_data_en = r_data_en;
   assign s_data_start = s_data_en & ((data_rwn_i & s_start_read) | (~data_rwn_i & s_start_write));
