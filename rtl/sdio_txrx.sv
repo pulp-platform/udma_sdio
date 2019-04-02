@@ -186,7 +186,7 @@ module sdio_txrx
       else
       begin
            if(s_stopcmd_start)
-               r_data_en = 0;
+               r_data_en <= 0;
       end
       if(s_clear_eot)
       begin
