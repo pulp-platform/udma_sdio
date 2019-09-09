@@ -8,3 +8,19 @@ udma_sdio:
     rtl/udma_sdio_reg_if.sv,
     rtl/udma_sdio_top.sv,
   ]
+  jg_slint_top_name: [
+    udma_sdio_top
+  ]
+  jg_slint_elab_opt: [
+  ]
+  jg_slint_postelab_cmds: [
+  ]
+  jg_slint_clocks: [
+    sys_clk_i,
+    periph_clk_i,
+  ]
+  jg_slint_resets: [
+    ~rstn_i,
+  ]
+
+
