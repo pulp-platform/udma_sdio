@@ -29,10 +29,6 @@ module sdio_txrx
     input  logic  [31:0] cmd_arg_i,
     input  logic   [2:0] cmd_rsp_type_i,
 
-    input logic    [5:0] stopcmd_op_i,
-    input logic   [31:0] stopcmd_arg_i,
-    input logic    [2:0] stopcmd_rsp_type_i,
-
     output logic [127:0] rsp_data_o,
 
     input  logic         data_en_i,
@@ -66,8 +62,6 @@ module sdio_txrx
 
     logic s_start_write;
     logic s_start_read;
-    logic s_data_en;
-    logic r_data_en;
 
     logic        s_cmd_eot;
     logic        s_cmd_clk_en;
@@ -77,8 +71,8 @@ module sdio_txrx
     logic  [2:0] s_cmd_rsp_type;
     logic  [5:0] s_cmd_status;
 
-    logic        s_stopcmd_start;
-    logic  [5:0] s_stopcmd_op;
+    logic        s_stopcmd_start;   
+    logic  [5:0] s_stopcmd_op;  
     logic [31:0] s_stopcmd_arg;
     logic  [2:0] s_stopcmd_rsp_type;
 
@@ -110,12 +104,11 @@ module sdio_txrx
                       ST_WAIT_EOT
                       } s_state,r_state;
 
-  assign s_stopcmd_op       = stopcmd_op_i;
-  assign s_stopcmd_arg      = stopcmd_arg_i;
-  assign s_stopcmd_rsp_type = stopcmd_rsp_type_i;
+  assign s_stopcmd_op       =  6'd12; //STOP_CMD is cmd 12
+  assign s_stopcmd_arg      = 32'h0;  //no argument
+  assign s_stopcmd_rsp_type =  3'h1;  //resp is R1
 
-  assign s_data_en = r_data_en;
-  assign s_data_start = s_data_en & ((data_rwn_i & s_start_read) | (~data_rwn_i & s_start_write));
+  assign s_data_start = (~r_data_eot) & data_en_i & ((data_rwn_i & s_start_read) | (~data_rwn_i & s_start_write));
 
   assign s_cmd_start    = s_cmd_mux ? s_stopcmd_start    : cmd_start_i   ; 
   assign s_cmd_op       = s_cmd_mux ? s_stopcmd_op       : cmd_op_i      ; 
@@ -137,16 +130,15 @@ module sdio_txrx
     case(r_state)
       ST_CMD_ONLY:
       begin
-        if(cmd_start_i && s_data_en && (data_block_num_i == 0))
+        if(cmd_start_i && data_en_i && (data_block_num_i == 0))
         begin
           s_state = ST_WAIT_EOT;
           s_single_block = 1'b1;
           s_sample_sb = 1'b1;
         end
-        else if(cmd_start_i && s_data_en)
+        else if(cmd_start_i && data_en_i)
         begin
           s_state = ST_WAIT_LAST;
-          s_single_block = 1'b0;
           s_sample_sb = 1'b1;
         end
       end
@@ -174,20 +166,12 @@ module sdio_txrx
 
   always_ff @(posedge clk_i or negedge rstn_i) begin : proc_r_eot
     if(~rstn_i) begin
-      r_data_en <= 0;
       r_cmd_eot  <= 0;
       r_data_eot <= 0;
       r_single_block <= 0;
       r_state <= ST_CMD_ONLY;
     end else begin
       r_state <= s_state;
-      if( ~s_cmd_mux )
-        r_data_en <= data_en_i;
-      else
-      begin
-           if(s_stopcmd_start)
-               r_data_en <= 0;
-      end
       if(s_clear_eot)
       begin
         r_cmd_eot  <= 0;
@@ -211,13 +195,20 @@ module sdio_txrx
 
   assign s_clk_en = s_cmd_clk_en | s_data_clk_en;
 
-  pulp_clock_gating i_clk_gate_sdio
-  (
-    .clk_i(clk_i),
-    .en_i(s_clk_en),
-    .test_en_i(1'b0),
-    .clk_o(sdclk_o)
-  );
+`ifndef PULP_FPGA_EMUL
+   pulp_clock_gating i_clk_gate_sdio
+     (
+      .clk_i(clk_i),
+      .en_i(s_clk_en),
+      .test_en_i(1'b0),
+      .clk_o(sdclk_o)
+      );
+`else
+   logic     clk_en_sdio;
+   always_ff @(negedge clk_i)
+     clk_en_sdio <= s_clk_en;
+   assign sdclk_o = clk_i & clk_en_sdio;
+`endif
 
   sdio_txrx_cmd i_cmd_if (
     .clk_i         ( clk_i          ),
