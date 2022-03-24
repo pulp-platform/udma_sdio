@@ -195,7 +195,6 @@ module sdio_txrx_cmd
           begin
             s_status_sample = 1'b1; // Clear previous status
             s_state = ST_TX_START;
-            s_clk_en = 1'b1;
           end
         end
         ST_TX_START:
