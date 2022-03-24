@@ -54,24 +54,30 @@ module sdio_txrx_data
 
   localparam STATUS_RSP_TIMEOUT   = 6'h1;
 
+   // 010 - data accepted CRC OK
+   // 101 - data rejected due to CRC error
+   // 110 - data rejected due to write error
+  localparam STATUS_WRITE_CRC_ERROR   = 6'h2;
+  localparam STATUS_WRITE_ERROR       = 6'h4;
+  localparam STATUS_WRITE_OTHERS      = 6'h8;
+
   localparam RSP_TYPE_NULL        = 3'b000;
   localparam RSP_TYPE_48_CRC      = 3'b001;
   localparam RSP_TYPE_48_NOCRC    = 3'b010;
   localparam RSP_TYPE_136         = 3'b011;
   localparam RSP_TYPE_48_BSY      = 3'b100;
 
-    enum logic [4:0] {ST_IDLE,
+    enum logic [3:0] {ST_IDLE,
+                      ST_EOT,
                       ST_WAIT,
+                      ST_STOP,
                       ST_TX_START,
-                      ST_TX_STOP,
                       ST_TX_SHIFT,
                       ST_TX_CRC,
                       ST_TX_END,
                       ST_TX_CRCSTAT,
                       ST_TX_BUSY,
-                      ST_TX_DELAY_START,
                       ST_RX_START,
-                      ST_RX_STOP,
                       ST_RX_SHIFT,
                       ST_RX_CRC} s_state,r_state;
 
@@ -112,6 +118,9 @@ module sdio_txrx_data
     logic         s_cnt_block_upd;
     logic         s_cnt_block_done;
 
+    logic         s_crcstatus_check;
+    logic [6:0]   r_crcstatus;
+
     logic         s_cnt_byte_evnt;
     logic         s_cnt_byte;
     logic         r_cnt_byte;
@@ -120,6 +129,7 @@ module sdio_txrx_data
     logic   [3:0] s_dataout;
     logic  [31:0] s_datain;
     logic         s_busy;
+    logic         s_data_last;
  
     logic         s_in_data_ready;
     logic         s_lastbitofword;
@@ -152,7 +162,7 @@ module sdio_txrx_data
     assign sddata_oen_o[2] = data_quad_i ? s_sddata_oen : 1'b1;
     assign sddata_oen_o[3] = data_quad_i ? s_sddata_oen : 1'b1;
 
-    assign data_last_o = s_busy & s_cnt_block_done & s_cnt_done;
+    assign data_last_o =  s_data_last;
     assign busy_o = s_busy;
     assign sdclk_en_o = s_clk_en;
 
@@ -437,6 +447,9 @@ module sdio_txrx_data
       s_eot           = 1'b0;
       s_cnt_block_upd = 1'b0;
       s_cnt_block     = r_cnt_block;
+      s_crcstatus_check = 1'b0;
+      s_data_last       = 1'b0;
+
 
       s_in_data_ready = 1'b0;
       s_out_data_valid = 1'b0;
@@ -451,16 +464,15 @@ module sdio_txrx_data
             s_clk_en = 1'b1;
             s_cnt_block_upd = 1'b1;
             s_cnt_block = data_block_num_i;
-            if(data_rwn_i)
-              s_state = ST_RX_START;
-            else
-              s_state = ST_TX_START;
+            s_cnt_start = 1'b1;  // starts counting
+            s_cnt_target = 'h2;// wait 3 cycles
+            s_state = ST_WAIT;
           end
         end
         ST_TX_START:
         begin
           s_sddata     = 4'b0;      //start bit
-          s_sddata_oen = 1'b1; // outup enabled
+          s_sddata_oen = 1'b0; // outup enabled
           s_state = ST_TX_SHIFT;
           s_cnt_start = 1'b1;  // starts counting
           s_cnt_byte  = 1'b1;  // counting bytes not cycles
@@ -505,52 +517,67 @@ module sdio_txrx_data
         end
         ST_TX_CRCSTAT:
         begin
+          s_crcstatus_check = 1'b1; // start crx status check
+
           s_sddata_oen = 1'b1; // outup disabled 
+
           if(s_cnt_done)
           begin 
+            if (r_crcstatus[3:1] == 3'b010)
+              begin
+                 s_status = r_status;
+                 s_state = ST_TX_BUSY;
+              end
+             else begin
+                s_state = ST_IDLE;
+                s_status_sample = 1'b1;
+
+                if (r_crcstatus[3:1] == 3'b101)
+                  begin
+                     s_status = r_status | STATUS_WRITE_CRC_ERROR;
+                  end
+                else if (r_crcstatus[3:1] == 3'b110)
+                  begin
+                     s_status = r_status | STATUS_WRITE_ERROR;
+                  end
+                else
+                  begin
+                     s_status = r_status | STATUS_WRITE_OTHERS;
+                  end
+             end
+
             s_cnt_start  = 1'b1;  // starts counting
             s_cnt_target = 9'h1FF;// waits max 512 cycles          
-            s_state = ST_TX_BUSY;
           end
         end
         ST_TX_BUSY:
         begin
           s_sddata_oen = 1'b1; // outup disabled
-          if(s_cnt_done && (data_rwn_i)) //means timeout
+          if(s_cnt_done) //means timeout
           begin
             s_state = ST_IDLE;
           end
           else
           begin
-            if(sddata_i == 1)
+            if(sddata_i[0])
             begin
               if(s_cnt_block_done)
               begin
-                s_eot   = 1'b1;
-                s_state = ST_IDLE;
+                s_cnt_start = 1'b1;  // starts counting
+                s_cnt_target = 'h4;// wait 3 cycles
+                s_cnt_block_upd = 1'b1;
+                s_state = ST_STOP;
               end
               else
               begin
-                // FIXME: We add a small delay here to give the sdcard model
-                // time to make its transitions, need to test on real sdcard
-                s_cnt_start  = 1'b1; // starts counting
-                s_cnt_target = 8'd7; // waits 8 cycles
+                s_cnt_start = 1'b1;  // starts counting
+                s_cnt_target = 'h2;// wait 3 cycles
                 s_cnt_block_upd = 1'b1;
                 s_cnt_block = r_cnt_block - 1;
-                s_state = ST_TX_DELAY_START; // delay next transfer slightly
+                s_state = ST_WAIT;
               end
             end
           end
-        end
-        ST_TX_DELAY_START:
-        begin
-            // wait a few cycles before doing the next transfer
-            s_busy = 1'b0; // keep busy to zero to avoid a false "data_start"
-            s_sddata_oen = 1'b1; // outup disabled
-            if(s_cnt_done)
-            begin
-                s_state = ST_TX_START;
-            end
         end
         ST_RX_START:
         begin
@@ -590,8 +617,12 @@ module sdio_txrx_data
           begin
             if(s_cnt_block_done)
             begin
-              s_eot   = 1'b1;
-              s_state = ST_IDLE;
+              s_cnt_start = 1'b1;  // starts counting
+              s_cnt_target = 'h4;// wait 3 cycles
+
+              s_state = ST_STOP;
+              s_cnt_block_upd = 1'b1;
+              s_cnt_block = r_cnt_block - 1;
             end
             else
             begin
@@ -604,10 +635,30 @@ module sdio_txrx_data
         ST_WAIT:
         begin
           if(s_cnt_done)
-          begin
-            s_eot   = 1'b1;
-            s_state = ST_IDLE;
-          end
+           begin
+               if(data_rwn_i)
+                 s_state = ST_RX_START;
+               else
+                 s_state = ST_TX_START;
+            end
+        end
+        ST_STOP:
+        begin
+          if(r_cnt == 1'b1)
+            begin
+               s_sddata_oen = 1'b0; // outup enabled
+            end
+
+          if(s_cnt_done)
+            begin
+               s_data_last  = 1'b1;
+               s_state = ST_EOT;
+            end
+        end
+        ST_EOT:
+        begin
+           s_eot   = 1'b1;
+           s_state = ST_IDLE;
         end
       endcase
     end
@@ -708,6 +759,23 @@ module sdio_txrx_data
         r_sddata     <= s_sddata;
       end
     end
+
+   always_ff @(posedge clk_i or negedge rstn_i)
+     begin : write_crc_check
+        if(~rstn_i) begin
+           r_crcstatus  <=  'h0;
+        end else
+          begin
+             if (s_crcstatus_check)
+               begin
+                  r_crcstatus <= {r_crcstatus[5:0], sddata_i[0]};
+               end
+             else
+               begin
+                  r_crcstatus <= 'h0;
+               end
+          end
+     end
 
 endmodule
 
