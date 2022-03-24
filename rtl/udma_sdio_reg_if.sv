@@ -42,10 +42,6 @@
 `define REG_CLK_DIV      5'b10000 //BASEADDR+0x40
 `define REG_STATUS       5'b10001 //BASEADDR+0x44
 
-// configure the stopcmd which will be used (potentially device dependant)
-`define REG_STOPCMD_OP   5'b10010 //BASEADDR+0x48
-`define REG_STOPCMD_ARG  5'b10011 //BASEADDR+0x52
-
 module udma_sdio_reg_if #(
                           parameter L2_AWIDTH_NOAL = 12,
                           parameter TRANS_SIZE     = 16
@@ -94,11 +90,6 @@ module udma_sdio_reg_if #(
     output logic [5:0]                cfg_cmd_op_o,
     output logic [31:0]               cfg_cmd_arg_o,
     output logic [2:0]                cfg_cmd_rsp_type_o,
-
-    output logic [5:0]                cfg_stopcmd_op_o,
-    output logic [31:0]               cfg_stopcmd_arg_o,
-    output logic [2:0]                cfg_stopcmd_rsp_type_o,
-
     input logic [127:0]               cfg_rsp_data_i,
     output logic                      cfg_data_en_o,
     output logic                      cfg_data_rwn_o,
@@ -141,10 +132,6 @@ module udma_sdio_reg_if #(
     logic         r_eot;
     logic         r_err;
 
-    logic   [5:0] r_stopcmd_op;  
-    logic  [31:0] r_stopcmd_arg;
-    logic   [2:0] r_stopcmd_rsp_type;
-
     assign s_wr_addr = (cfg_valid_i & ~cfg_rwn_i) ? cfg_addr_i : 5'h0;
     assign s_rd_addr = (cfg_valid_i &  cfg_rwn_i) ? cfg_addr_i : 5'h0;
 
@@ -160,17 +147,14 @@ module udma_sdio_reg_if #(
     assign cfg_tx_en_o         = r_tx_en;
     assign cfg_tx_clr_o        = r_tx_clr;
 
-    assign cfg_cmd_op_o            = r_cmd_op;
-    assign cfg_cmd_arg_o           = r_cmd_arg;
-    assign cfg_cmd_rsp_type_o      = r_cmd_rsp_type;
-    assign cfg_stopcmd_op_o        = r_stopcmd_op;
-    assign cfg_stopcmd_arg_o       = r_stopcmd_arg;
-    assign cfg_stopcmd_rsp_type_o  = r_stopcmd_rsp_type;
-    assign cfg_data_en_o           = r_data_en;
-    assign cfg_data_rwn_o          = r_data_rwn;
-    assign cfg_data_quad_o         = r_data_quad;
-    assign cfg_data_block_size_o   = r_data_block_size;
-    assign cfg_data_block_num_o    = r_data_block_num;
+    assign cfg_cmd_op_o          = r_cmd_op;
+    assign cfg_cmd_arg_o         = r_cmd_arg;
+    assign cfg_cmd_rsp_type_o    = r_cmd_rsp_type;
+    assign cfg_data_en_o         = r_data_en;
+    assign cfg_data_rwn_o        = r_data_rwn;
+    assign cfg_data_quad_o       = r_data_quad;
+    assign cfg_data_block_size_o = r_data_block_size;
+    assign cfg_data_block_num_o  = r_data_block_num;
 
     assign cfg_sdio_start_o      = r_sdio_start;
 
@@ -203,9 +187,6 @@ module udma_sdio_reg_if #(
             r_cmd_op          <= 'h0;
             r_cmd_arg         <= 'h0;
             r_cmd_rsp_type    <= 'h0;
-            r_stopcmd_op          <= 'h0;
-            r_stopcmd_arg         <= 'h0;
-            r_stopcmd_rsp_type    <= 'h0;
             r_rsp_data        <= 'h0;
             r_data_en         <= 'h0;
             r_data_rwn        <= 'h0;
@@ -255,7 +236,7 @@ module udma_sdio_reg_if #(
                     r_rx_size        <= cfg_data_i[TRANS_SIZE-1:0];
                 `REG_RX_CFG:
                 begin
-                    r_rx_clr          = cfg_data_i[6];
+                    r_rx_clr          = cfg_data_i[5];
                     r_rx_en           = cfg_data_i[4];
                     r_rx_continuous  <= cfg_data_i[0];
                 end
@@ -265,7 +246,7 @@ module udma_sdio_reg_if #(
                     r_tx_size        <= cfg_data_i[TRANS_SIZE-1:0];
                 `REG_TX_CFG:
                 begin
-                    r_tx_clr          = cfg_data_i[6];
+                    r_tx_clr          = cfg_data_i[5];
                     r_tx_en           = cfg_data_i[4];
                     r_tx_continuous  <= cfg_data_i[0];
                 end
@@ -301,15 +282,6 @@ module udma_sdio_reg_if #(
                      r_eot <= 1'b0;
                    if (cfg_data_i[1])
                      r_err <= 1'b0;
-                end
-                `REG_STOPCMD_OP:
-                begin
-                    r_stopcmd_op        <= cfg_data_i[13:8];
-                    r_stopcmd_rsp_type  <= cfg_data_i[2:0];
-                end
-                `REG_STOPCMD_ARG:
-                begin
-                    r_stopcmd_arg <= cfg_data_i[31:0];
                 end
                 endcase
             end
