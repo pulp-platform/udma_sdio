@@ -16,14 +16,14 @@
 package sdio_pkg;
   // sdio structure
 	typedef struct packed {
-		logic        sdclk;
-		logic        sdcmd;
+		logic        sdclk_out;
+		logic        sdcmd_out;
     logic        sdcmd_oen;
-    logic [3:0]  sddata;
+    logic [3:0]  sddata_out;
     logic [3:0]  sddata_oen;
 	} sdio_to_pad_t;
 	typedef struct packed {
-    logic        sdcmd;
-		logic [3:0]  sddata;
+    logic        sdcmd_in;
+		logic [3:0]  sddata_in;
 	} pad_to_sdio_t;
 endpackage

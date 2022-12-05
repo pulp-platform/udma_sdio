@@ -91,12 +91,12 @@ udma_sdio_top #(.L2_AWIDTH_NOAL(L2_AWIDTH_NOAL), .TRANS_SIZE(TRANS_SIZE)) i_udma
     .eot_o              ( events_o[2]       ),
     .err_o              ( events_o[3]       ),
 
-    .sdclk_o            ( sdio_to_pad.sdclk      ),
-    .sdcmd_o            ( sdio_to_pad.sdcmd      ),
-    .sdcmd_i            ( pad_to_sdio.sdcmd      ),
+    .sdclk_o            ( sdio_to_pad.sdclk_out  ),
+    .sdcmd_o            ( sdio_to_pad.sdcmd_out  ),
+    .sdcmd_i            ( pad_to_sdio.sdcmd_in   ),
     .sdcmd_oen_o        ( sdio_to_pad.sdcmd_oen  ),
-    .sddata_o           ( sdio_to_pad.sddata     ),
-    .sddata_i           ( pad_to_sdio.sddata     ),
+    .sddata_o           ( sdio_to_pad.sddata_out ),
+    .sddata_i           ( pad_to_sdio.sddata_in ),
     .sddata_oen_o       ( sdio_to_pad.sddata_oen )
 );
 
