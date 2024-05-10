@@ -8,7 +8,7 @@ package:
     - "Francesco Conti <f.conti@unibo.it>"
 
 dependencies:
-  udma_core: { git: "https://github.com/pulp-platform/udma_core.git", version: 1.0.2 }
+  udma_core: { git: "https://github.com/pulp-platform/udma_core.git", version: 2.0.0 }
   common_cells: { git: "https://github.com/pulp-platform/common_cells.git", version: 1.21.0 }
   tech_cells_generic: { git: "https://github.com/pulp-platform/tech_cells_generic.git", version: 0.2.3 }
 
@@ -17,6 +17,7 @@ sources:
     # package. Files in level 1 only depend on files in level 0, files in level 2 on files in
     # levels 1 and 0, etc. Files within a level are ordered alphabetically.
     # Level 0
+  - rtl/sdio_pkg.sv
   - rtl/sdio_crc16.sv
   - rtl/sdio_crc7.sv
   - rtl/udma_sdio_reg_if.sv
@@ -27,3 +28,4 @@ sources:
   - rtl/sdio_txrx.sv
     # Level 3
   - rtl/udma_sdio_top.sv
+  - rtl/udma_sdio_wrap.sv
